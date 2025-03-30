@@ -3,6 +3,7 @@ import React, { createContext, useContext, useState, useEffect } from "react";
 import { IPTVChannel, IPTVGroup, IPTVPlaylist } from "@/types/iptv";
 import { parseM3U, generateM3U } from "@/utils/m3uParser";
 import { useToast } from "@/hooks/use-toast";
+import { useStorage } from "@/hooks/use-storage";
 import { v4 as uuidv4 } from "uuid";
 
 interface IPTVContextProps {
@@ -25,52 +26,31 @@ const IPTVContext = createContext<IPTVContextProps | undefined>(undefined);
 
 export const IPTVProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const { toast } = useToast();
-  const [playlists, setPlaylists] = useState<IPTVPlaylist[]>([]);
+  // Use our custom storage hook instead of direct localStorage
+  const [playlists, setPlaylists] = useStorage<IPTVPlaylist[]>("iptv-playlists", []);
   const [currentPlaylist, setCurrentPlaylistState] = useState<IPTVPlaylist | null>(null);
   const [selectedChannel, setSelectedChannel] = useState<IPTVChannel | null>(null);
   const [isTestingChannel, setIsTestingChannel] = useState(false);
 
-  // Load playlists from localStorage on component mount
+  // Set the first playlist as current if available on mount or when playlists change
   useEffect(() => {
-    const savedPlaylists = localStorage.getItem("iptv-playlists");
-    if (savedPlaylists) {
-      try {
-        const parsed = JSON.parse(savedPlaylists);
-        
-        // Convert date strings back to Date objects
-        const playlists = parsed.map((playlist: any) => ({
-          ...playlist,
-          lastUpdated: new Date(playlist.lastUpdated)
-        }));
-        
-        setPlaylists(playlists);
-        
-        // Set the first playlist as current if available
-        if (playlists.length > 0) {
-          setCurrentPlaylistState(playlists[0]);
-        }
-      } catch (e) {
-        console.error("Failed to parse saved playlists", e);
-        toast({
-          title: "Errore",
-          description: "Impossibile caricare le playlist salvate",
-          variant: "destructive"
-        });
-      }
+    if (playlists.length > 0 && !currentPlaylist) {
+      setCurrentPlaylistState(playlists[0]);
     }
-  }, [toast]);
-
-  // Save playlists to localStorage whenever they change
-  useEffect(() => {
-    if (playlists.length > 0) {
-      localStorage.setItem("iptv-playlists", JSON.stringify(playlists));
-    }
-  }, [playlists]);
+  }, [playlists, currentPlaylist]);
 
   const addPlaylist = (name: string, content: string) => {
     try {
       const parsedPlaylist = parseM3U(content);
       parsedPlaylist.name = name;
+      
+      // Limit size if needed to avoid quota issues
+      if (parsedPlaylist.channels.length > 500) {
+        toast({
+          title: "Avviso",
+          description: `La playlist contiene molti canali (${parsedPlaylist.channels.length}). Alcuni potrebbero non essere salvati per limiti di spazio.`
+        });
+      }
       
       setPlaylists(prev => [...prev, parsedPlaylist]);
       setCurrentPlaylistState(parsedPlaylist);
@@ -101,7 +81,7 @@ export const IPTVProvider: React.FC<{ children: React.ReactNode }> = ({ children
     
     // Create a simple test by trying to load the stream
     try {
-      const response = await fetch(channel.url, { method: 'HEAD', mode: 'no-cors', timeout: 5000 });
+      const response = await fetch(channel.url, { method: 'HEAD', mode: 'no-cors' });
       
       // Update the channel's status
       updateChannel(channel.id, {
@@ -134,7 +114,16 @@ export const IPTVProvider: React.FC<{ children: React.ReactNode }> = ({ children
     let successCount = 0;
     let failCount = 0;
     
-    for (const channel of currentPlaylist.channels) {
+    // Test only a reasonable number of channels to avoid browser limitations
+    const channelsToTest = currentPlaylist.channels.slice(0, 100);
+    if (currentPlaylist.channels.length > 100) {
+      toast({
+        title: "Avviso",
+        description: `Verranno testati solo i primi 100 canali su ${currentPlaylist.channels.length}`
+      });
+    }
+    
+    for (const channel of channelsToTest) {
       try {
         const isOnline = await testChannel(channel);
         if (isOnline) {
