@@ -9,7 +9,9 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Input } from "@/components/ui/input";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Separator } from "@/components/ui/separator";
-import { Search, RefreshCw, CheckCircle, XCircle, Circle, Flag, Music, Tv, Film } from "lucide-react";
+import { Search, RefreshCw, CheckCircle, XCircle, Circle, Flag, Music, Tv, Film, Shield } from "lucide-react";
+import VPNToggle from "@/components/VPNToggle";
+import { VPNState } from "@/types/iptv";
 
 const Index = () => {
   const { 
@@ -23,9 +25,13 @@ const Index = () => {
   } = useIPTV();
   
   const [searchTerm, setSearchTerm] = useState("");
-  const [filteredChannels, setFilteredChannels] = useState<typeof currentPlaylist?.channels>([]);
+  const [filteredChannels, setFilteredChannels] = useState<Array<any>>([]);
   const [activeCategory, setActiveCategory] = useState<string | null>(null);
   const [activeCategoryType, setActiveCategoryType] = useState<"group" | "country" | "genre" | "broadcaster" | null>(null);
+  const [vpnState, setVpnState] = useState<VPNState>({
+    enabled: false,
+    status: 'disconnected'
+  });
   
   useEffect(() => {
     if (!currentPlaylist) return;
@@ -78,6 +84,21 @@ const Index = () => {
       default:
         return <Circle className="h-4 w-4 text-gray-400" />;
     }
+  };
+
+  // Function to get stream URL with VPN if enabled
+  const getStreamUrl = (url: string): string => {
+    if (!vpnState.enabled || vpnState.status !== 'connected') {
+      return url;
+    }
+    
+    // In a real app, this would route through an actual proxy
+    // For demo purposes, we'll just add a parameter to indicate VPN is in use
+    return url + (url.includes('?') ? '&' : '?') + 'vpn=true';
+  };
+
+  const handleVPNChange = (newVpnState: VPNState) => {
+    setVpnState(newVpnState);
   };
 
   if (playlists.length === 0) {
@@ -267,10 +288,18 @@ const Index = () => {
           </div>
           
           <div className="md:w-2/3">
+            <VPNToggle onVPNChange={handleVPNChange} />
+            
             <Card className="h-full">
               <CardHeader>
-                <CardTitle className="text-xl">
-                  {selectedChannel ? selectedChannel.name : "Seleziona un canale"}
+                <CardTitle className="text-xl flex items-center justify-between">
+                  <span>{selectedChannel ? selectedChannel.name : "Seleziona un canale"}</span>
+                  {vpnState.enabled && vpnState.status === 'connected' && (
+                    <div className="flex items-center text-xs text-green-600 bg-green-50 px-2 py-1 rounded-full">
+                      <Shield className="h-3 w-3 mr-1" />
+                      VPN {vpnState.country}
+                    </div>
+                  )}
                 </CardTitle>
               </CardHeader>
               <CardContent>
@@ -324,6 +353,11 @@ const Index = () => {
                       <div className="text-sm font-medium mb-1">Stream URL:</div>
                       <div className="p-2 bg-muted rounded-md text-xs break-all">
                         {selectedChannel.url}
+                        {vpnState.enabled && vpnState.status === 'connected' && (
+                          <span className="inline-flex items-center ml-2 text-green-600">
+                            <Shield className="h-3 w-3 mr-1" /> VPN Protected
+                          </span>
+                        )}
                       </div>
                     </div>
                     
@@ -344,10 +378,17 @@ const Index = () => {
                     <Separator />
                     
                     <div>
-                      <div className="text-sm font-medium mb-2">Anteprima:</div>
+                      <div className="text-sm font-medium mb-2 flex items-center">
+                        Anteprima:
+                        {vpnState.enabled && vpnState.status === 'connected' && (
+                          <span className="inline-flex items-center ml-2 text-xs text-green-600 bg-green-50 px-2 py-0.5 rounded-full">
+                            <Shield className="h-3 w-3 mr-1" /> VPN attivo
+                          </span>
+                        )}
+                      </div>
                       <div className="video-container bg-black rounded-md">
                         <video 
-                          src={selectedChannel.url}
+                          src={getStreamUrl(selectedChannel.url)}
                           controls
                           autoPlay
                           className="w-full h-full"

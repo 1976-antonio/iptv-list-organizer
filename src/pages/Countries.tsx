@@ -5,7 +5,9 @@ import { useIPTV } from "@/context/IPTVContext";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import { Search, Flag } from "lucide-react";
+import { Search, Flag, Shield } from "lucide-react";
+import { VPNState } from "@/types/iptv";
+import VPNToggle from "@/components/VPNToggle";
 import { 
   Table, 
   TableHeader, 
@@ -20,6 +22,10 @@ const Countries = () => {
   const [searchTerm, setSearchTerm] = useState("");
   const [filteredCountries, setFilteredCountries] = useState<Array<any>>([]);
   const [selectedCountryIndex, setSelectedCountryIndex] = useState<number | null>(null);
+  const [vpnState, setVpnState] = useState<VPNState>({
+    enabled: false,
+    status: 'disconnected'
+  });
   
   useEffect(() => {
     if (!currentPlaylist) return;
@@ -53,6 +59,10 @@ const Countries = () => {
     setSelectedCountryIndex(index);
   };
 
+  const handleVPNChange = (newVpnState: VPNState) => {
+    setVpnState(newVpnState);
+  };
+
   if (!currentPlaylist) {
     return (
       <AppLayout>
@@ -68,14 +78,25 @@ const Countries = () => {
     ? filteredCountries[selectedCountryIndex]
     : null;
 
+  // If a country is selected and VPN is enabled, suggest using VPN for that country
+  const isVPNRecommendedForCountry = selectedCountry && vpnState.country !== selectedCountry.name;
+
   return (
     <AppLayout>
       <div className="container mx-auto p-4 md:p-6">
+        <VPNToggle onVPNChange={handleVPNChange} />
+        
         <Card>
           <CardHeader>
             <CardTitle className="text-xl flex items-center">
               <Flag className="h-5 w-5 mr-2" />
               Paesi
+              {vpnState.enabled && vpnState.status === 'connected' && (
+                <div className="ml-2 text-xs text-green-600 bg-green-50 px-2 py-1 rounded-full flex items-center">
+                  <Shield className="h-3 w-3 mr-1" />
+                  VPN attivo: {vpnState.country}
+                </div>
+              )}
             </CardTitle>
           </CardHeader>
           <CardContent>
@@ -105,7 +126,14 @@ const Countries = () => {
                         className={selectedCountryIndex === index ? "bg-muted cursor-pointer" : "cursor-pointer hover:bg-muted"}
                         onClick={() => handleCountrySelect(index)}
                       >
-                        <TableCell className="font-medium">{country.name}</TableCell>
+                        <TableCell className="font-medium">
+                          <div className="flex items-center">
+                            {country.name}
+                            {vpnState.enabled && vpnState.status === 'connected' && vpnState.country === country.name && (
+                              <Shield className="h-3 w-3 ml-2 text-green-500" />
+                            )}
+                          </div>
+                        </TableCell>
                         <TableCell className="text-right">{country.channels.length}</TableCell>
                       </TableRow>
                     ))
@@ -120,8 +148,13 @@ const Countries = () => {
             
             {selectedCountry ? (
               <div className="mt-6">
-                <h3 className="text-lg font-medium mb-4">
+                <h3 className="text-lg font-medium mb-4 flex items-center">
                   Canali per {selectedCountry.name}
+                  {isVPNRecommendedForCountry && vpnState.enabled && vpnState.status === 'connected' && (
+                    <span className="ml-2 text-xs text-amber-700 bg-amber-50 px-2 py-0.5 rounded-full">
+                      Il tuo VPN è impostato per {vpnState.country}, non per {selectedCountry.name}
+                    </span>
+                  )}
                 </h3>
                 <ScrollArea className="h-[40vh]">
                   {selectedCountry.channels && selectedCountry.channels.length > 0 ? (

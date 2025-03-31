@@ -47,3 +47,10 @@ export interface IPTVPlaylist {
   genres: IPTVGenre[];
   broadcasters: IPTVBroadcaster[];
 }
+
+export interface VPNState {
+  enabled: boolean;
+  country?: string;
+  status: 'connected' | 'connecting' | 'disconnected';
+  lastConnected?: Date;
+}
