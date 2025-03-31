@@ -14,11 +14,13 @@ import {
   TableBody, 
   TableCell 
 } from "@/components/ui/table";
+import { Skeleton } from "@/components/ui/skeleton";
 
 const Countries = () => {
   const { currentPlaylist, setSelectedChannel } = useIPTV();
   const [searchTerm, setSearchTerm] = useState("");
   const [filteredCountries, setFilteredCountries] = useState<Array<any>>([]);
+  const [selectedCountryIndex, setSelectedCountryIndex] = useState<number | null>(null);
   
   useEffect(() => {
     if (!currentPlaylist) return;
@@ -35,6 +37,9 @@ const Countries = () => {
     filtered = filtered.sort((a, b) => a.name.localeCompare(b.name));
     
     setFilteredCountries(filtered);
+    
+    // Reset selected country when filter changes
+    setSelectedCountryIndex(filtered.length > 0 ? 0 : null);
   }, [currentPlaylist, searchTerm]);
 
   const handleChannelSelect = (channelId: string) => {
@@ -43,6 +48,10 @@ const Countries = () => {
     if (channel) {
       setSelectedChannel(channel);
     }
+  };
+
+  const handleCountrySelect = (index: number) => {
+    setSelectedCountryIndex(index);
   };
 
   if (!currentPlaylist) {
@@ -54,6 +63,11 @@ const Countries = () => {
       </AppLayout>
     );
   }
+
+  // Get the selected country safely
+  const selectedCountry = selectedCountryIndex !== null && filteredCountries && filteredCountries.length > selectedCountryIndex
+    ? filteredCountries[selectedCountryIndex]
+    : null;
 
   return (
     <AppLayout>
@@ -85,38 +99,62 @@ const Countries = () => {
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {filteredCountries && filteredCountries.map((country) => (
-                    <TableRow key={country.id}>
-                      <TableCell className="font-medium">{country.name}</TableCell>
-                      <TableCell className="text-right">{country.channels.length}</TableCell>
+                  {filteredCountries && filteredCountries.length > 0 ? (
+                    filteredCountries.map((country, index) => (
+                      <TableRow 
+                        key={country.id}
+                        className={selectedCountryIndex === index ? "bg-muted cursor-pointer" : "cursor-pointer hover:bg-muted"}
+                        onClick={() => handleCountrySelect(index)}
+                      >
+                        <TableCell className="font-medium">{country.name}</TableCell>
+                        <TableCell className="text-right">{country.channels.length}</TableCell>
+                      </TableRow>
+                    ))
+                  ) : (
+                    <TableRow>
+                      <TableCell colSpan={2} className="text-center py-4">Nessun paese trovato</TableCell>
                     </TableRow>
-                  ))}
+                  )}
                 </TableBody>
               </Table>
             </div>
             
-            {filteredCountries && filteredCountries.length > 0 && (
+            {selectedCountry ? (
               <div className="mt-6">
                 <h3 className="text-lg font-medium mb-4">
-                  Canali per {filteredCountries[0].name}
+                  Canali per {selectedCountry.name}
                 </h3>
                 <ScrollArea className="h-[40vh]">
-                  {filteredCountries[0].channels.map((channelId) => {
-                    const channel = currentPlaylist.channels.find(c => c.id === channelId);
-                    if (!channel) return null;
-                    
-                    return (
-                      <div 
-                        key={channelId}
-                        className="p-2 cursor-pointer hover:bg-muted rounded-md mb-1"
-                        onClick={() => handleChannelSelect(channelId)}
-                      >
-                        {channel.name}
-                      </div>
-                    );
-                  })}
+                  {selectedCountry.channels && selectedCountry.channels.length > 0 ? (
+                    selectedCountry.channels.map((channelId) => {
+                      const channel = currentPlaylist.channels.find(c => c.id === channelId);
+                      if (!channel) return null;
+                      
+                      return (
+                        <div 
+                          key={channelId}
+                          className="p-2 cursor-pointer hover:bg-muted rounded-md mb-1"
+                          onClick={() => handleChannelSelect(channelId)}
+                        >
+                          {channel.name}
+                        </div>
+                      );
+                    })
+                  ) : (
+                    <div className="text-center py-4 text-muted-foreground">
+                      Nessun canale trovato per questo paese
+                    </div>
+                  )}
                 </ScrollArea>
               </div>
+            ) : (
+              filteredCountries && filteredCountries.length > 0 ? (
+                <div className="mt-6">
+                  <h3 className="text-lg font-medium mb-4">
+                    Seleziona un paese per vedere i canali
+                  </h3>
+                </div>
+              ) : null
             )}
           </CardContent>
         </Card>
