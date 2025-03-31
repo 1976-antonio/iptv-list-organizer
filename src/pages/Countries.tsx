@@ -18,7 +18,7 @@ import {
 const Countries = () => {
   const { currentPlaylist, setSelectedChannel } = useIPTV();
   const [searchTerm, setSearchTerm] = useState("");
-  const [filteredCountries, setFilteredCountries] = useState<typeof currentPlaylist?.countries>([]);
+  const [filteredCountries, setFilteredCountries] = useState<Array<any>>([]);
   
   useEffect(() => {
     if (!currentPlaylist) return;
@@ -85,7 +85,7 @@ const Countries = () => {
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {filteredCountries.map((country) => (
+                  {filteredCountries && filteredCountries.map((country) => (
                     <TableRow key={country.id}>
                       <TableCell className="font-medium">{country.name}</TableCell>
                       <TableCell className="text-right">{country.channels.length}</TableCell>
@@ -95,7 +95,7 @@ const Countries = () => {
               </Table>
             </div>
             
-            {filteredCountries.length > 0 && (
+            {filteredCountries && filteredCountries.length > 0 && (
               <div className="mt-6">
                 <h3 className="text-lg font-medium mb-4">
                   Canali per {filteredCountries[0].name}
