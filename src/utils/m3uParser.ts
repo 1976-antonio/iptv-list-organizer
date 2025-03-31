@@ -1,5 +1,4 @@
-
-import { IPTVChannel, IPTVGroup, IPTVPlaylist, IPTVCountry } from "@/types/iptv";
+import { IPTVChannel, IPTVGroup, IPTVPlaylist, IPTVCountry, IPTVGenre, IPTVBroadcaster } from "@/types/iptv";
 import { v4 as uuidv4 } from "uuid";
 
 // Common country codes mapping for basic detection
@@ -30,6 +29,18 @@ const COUNTRY_CODES = {
   "in": "India"
 };
 
+// Common genres for detection
+const COMMON_GENRES = [
+  "news", "sport", "movie", "documentary", "entertainment", "music", "kids", "education",
+  "notizie", "sport", "film", "documentari", "intrattenimento", "musica", "bambini", "educazione"
+];
+
+// Common Italian broadcasters
+const COMMON_BROADCASTERS = [
+  "rai", "mediaset", "sky", "dazn", "discovery", "la7", "tvsat", "tv8", "nove", "paramount",
+  "disney", "netflix", "amazon", "hbo"
+];
+
 // Detect country from channel name or group
 const detectCountry = (text: string): { name: string, code: string } | null => {
   text = text.toLowerCase();
@@ -43,11 +54,39 @@ const detectCountry = (text: string): { name: string, code: string } | null => {
   return null;
 };
 
+// Detect genre from channel name or group
+const detectGenre = (text: string): string | null => {
+  text = text.toLowerCase();
+  
+  for (const genre of COMMON_GENRES) {
+    if (text.includes(genre)) {
+      return genre.charAt(0).toUpperCase() + genre.slice(1);
+    }
+  }
+  
+  return null;
+};
+
+// Detect broadcaster from channel name
+const detectBroadcaster = (text: string): string | null => {
+  text = text.toLowerCase();
+  
+  for (const broadcaster of COMMON_BROADCASTERS) {
+    if (text.includes(broadcaster)) {
+      return broadcaster.toUpperCase();
+    }
+  }
+  
+  return null;
+};
+
 export function parseM3U(content: string): IPTVPlaylist {
   const lines = content.split("\n");
   const channels: IPTVChannel[] = [];
   const groupNames = new Set<string>();
   const countryMap = new Map<string, { name: string, code: string, channels: string[] }>();
+  const genreMap = new Map<string, { name: string, channels: string[] }>();
+  const broadcasterMap = new Map<string, { name: string, channels: string[] }>();
   
   let currentChannel: Partial<IPTVChannel> | null = null;
   
@@ -101,6 +140,33 @@ export function parseM3U(content: string): IPTVPlaylist {
           currentChannel.country = detectedCountry.name;
         }
       }
+      
+      // Extract or detect genre
+      const genreMatch = line.match(/tvg-genre="([^"]+)"/);
+      if (genreMatch) {
+        currentChannel.genre = genreMatch[1];
+      } else {
+        // Try to detect genre from name or group
+        const detectedGenre = detectGenre(currentChannel.name) || 
+                             (currentChannel.group ? detectGenre(currentChannel.group) : null);
+        
+        if (detectedGenre) {
+          currentChannel.genre = detectedGenre;
+        }
+      }
+      
+      // Extract or detect broadcaster
+      const broadcasterMatch = line.match(/tvg-broadcaster="([^"]+)"/);
+      if (broadcasterMatch) {
+        currentChannel.broadcaster = broadcasterMatch[1];
+      } else {
+        // Try to detect broadcaster from name
+        const detectedBroadcaster = detectBroadcaster(currentChannel.name);
+        
+        if (detectedBroadcaster) {
+          currentChannel.broadcaster = detectedBroadcaster;
+        }
+      }
     } else if (line.startsWith("http") && currentChannel) {
       // This is the URL for the previous channel
       currentChannel.url = line;
@@ -122,6 +188,34 @@ export function parseM3U(content: string): IPTVPlaylist {
         }
         
         countryMap.get(countryName)?.channels.push(currentChannel.id);
+      }
+      
+      // Add to genre map if genre is defined
+      if (currentChannel.genre) {
+        const genreName = currentChannel.genre;
+        
+        if (!genreMap.has(genreName)) {
+          genreMap.set(genreName, {
+            name: genreName,
+            channels: []
+          });
+        }
+        
+        genreMap.get(genreName)?.channels.push(currentChannel.id);
+      }
+      
+      // Add to broadcaster map if broadcaster is defined
+      if (currentChannel.broadcaster) {
+        const broadcasterName = currentChannel.broadcaster;
+        
+        if (!broadcasterMap.has(broadcasterName)) {
+          broadcasterMap.set(broadcasterName, {
+            name: broadcasterName,
+            channels: []
+          });
+        }
+        
+        broadcasterMap.get(broadcasterName)?.channels.push(currentChannel.id);
       }
       
       currentChannel = null;
@@ -166,13 +260,49 @@ export function parseM3U(content: string): IPTVPlaylist {
     });
   }
   
+  // Create genres
+  const genres: IPTVGenre[] = Array.from(genreMap.values()).map(genre => ({
+    id: uuidv4(),
+    name: genre.name,
+    channels: genre.channels
+  }));
+  
+  // Add "Unknown" genre if any channels don't have a genre
+  const unknownGenreChannels = channels.filter(channel => !channel.genre);
+  if (unknownGenreChannels.length > 0) {
+    genres.push({
+      id: uuidv4(),
+      name: "Unknown",
+      channels: unknownGenreChannels.map(channel => channel.id)
+    });
+  }
+  
+  // Create broadcasters
+  const broadcasters: IPTVBroadcaster[] = Array.from(broadcasterMap.values()).map(broadcaster => ({
+    id: uuidv4(),
+    name: broadcaster.name,
+    channels: broadcaster.channels
+  }));
+  
+  // Add "Unknown" broadcaster if any channels don't have a broadcaster
+  const unknownBroadcasterChannels = channels.filter(channel => !channel.broadcaster);
+  if (unknownBroadcasterChannels.length > 0) {
+    broadcasters.push({
+      id: uuidv4(),
+      name: "Unknown",
+      channels: unknownBroadcasterChannels.map(channel => channel.id)
+    });
+  }
+  
   return {
     id: uuidv4(),
     name: "Imported Playlist",
     lastUpdated: new Date(),
     channels,
     groups,
-    countries
+    countries,
+    genres,
+    broadcasters
   };
 }
 
@@ -193,6 +323,14 @@ export function generateM3U(playlist: IPTVPlaylist): string {
       )?.[0] || channel.country.substring(0, 2).toLowerCase();
       
       content += ` tvg-country="${countryCode}"`;
+    }
+    
+    if (channel.genre) {
+      content += ` tvg-genre="${channel.genre}"`;
+    }
+    
+    if (channel.broadcaster) {
+      content += ` tvg-broadcaster="${channel.broadcaster}"`;
     }
     
     content += `, "${channel.name}"\n${channel.url}\n`;

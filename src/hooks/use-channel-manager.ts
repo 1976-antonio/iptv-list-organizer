@@ -1,6 +1,6 @@
 
 import { useState } from "react";
-import { IPTVChannel, IPTVPlaylist, IPTVCountry } from "@/types/iptv";
+import { IPTVChannel, IPTVPlaylist, IPTVCountry, IPTVGenre, IPTVBroadcaster } from "@/types/iptv";
 import { useToast } from "@/hooks/use-toast";
 import { v4 as uuidv4 } from "uuid";
 
@@ -26,10 +26,13 @@ export function useChannelManager(
           return channel;
         });
         
+        let updatedCountries = [...playlist.countries];
+        let updatedGenres = [...playlist.genres];
+        let updatedBroadcasters = [...playlist.broadcasters];
+        
         // If the country changed, update the countries list
         if (updates.country && currentPlaylist.channels.find(c => c.id === channelId)?.country !== updates.country) {
           const originalChannel = currentPlaylist.channels.find(c => c.id === channelId);
-          let updatedCountries = [...playlist.countries];
           
           // Remove from old country
           if (originalChannel?.country) {
@@ -65,15 +68,93 @@ export function useChannelManager(
               channels: [channelId]
             });
           }
-          
-          return { 
-            ...playlist, 
-            channels: updatedChannels,
-            countries: updatedCountries
-          };
         }
         
-        return { ...playlist, channels: updatedChannels };
+        // If the genre changed, update the genres list
+        if (updates.genre && currentPlaylist.channels.find(c => c.id === channelId)?.genre !== updates.genre) {
+          const originalChannel = currentPlaylist.channels.find(c => c.id === channelId);
+          
+          // Remove from old genre
+          if (originalChannel?.genre) {
+            updatedGenres = updatedGenres.map(genre => {
+              if (genre.name === originalChannel.genre) {
+                return {
+                  ...genre,
+                  channels: genre.channels.filter(id => id !== channelId)
+                };
+              }
+              return genre;
+            });
+          }
+          
+          // Add to new genre
+          const existingGenre = updatedGenres.find(g => g.name === updates.genre);
+          if (existingGenre) {
+            updatedGenres = updatedGenres.map(genre => {
+              if (genre.name === updates.genre) {
+                return {
+                  ...genre,
+                  channels: [...genre.channels, channelId]
+                };
+              }
+              return genre;
+            });
+          } else {
+            // Create new genre
+            updatedGenres.push({
+              id: uuidv4(),
+              name: updates.genre,
+              channels: [channelId]
+            });
+          }
+        }
+        
+        // If the broadcaster changed, update the broadcasters list
+        if (updates.broadcaster && currentPlaylist.channels.find(c => c.id === channelId)?.broadcaster !== updates.broadcaster) {
+          const originalChannel = currentPlaylist.channels.find(c => c.id === channelId);
+          
+          // Remove from old broadcaster
+          if (originalChannel?.broadcaster) {
+            updatedBroadcasters = updatedBroadcasters.map(broadcaster => {
+              if (broadcaster.name === originalChannel.broadcaster) {
+                return {
+                  ...broadcaster,
+                  channels: broadcaster.channels.filter(id => id !== channelId)
+                };
+              }
+              return broadcaster;
+            });
+          }
+          
+          // Add to new broadcaster
+          const existingBroadcaster = updatedBroadcasters.find(b => b.name === updates.broadcaster);
+          if (existingBroadcaster) {
+            updatedBroadcasters = updatedBroadcasters.map(broadcaster => {
+              if (broadcaster.name === updates.broadcaster) {
+                return {
+                  ...broadcaster,
+                  channels: [...broadcaster.channels, channelId]
+                };
+              }
+              return broadcaster;
+            });
+          } else {
+            // Create new broadcaster
+            updatedBroadcasters.push({
+              id: uuidv4(),
+              name: updates.broadcaster,
+              channels: [channelId]
+            });
+          }
+        }
+        
+        return { 
+          ...playlist, 
+          channels: updatedChannels,
+          countries: updatedCountries,
+          genres: updatedGenres,
+          broadcasters: updatedBroadcasters
+        };
       }
       return playlist;
     });
@@ -108,11 +189,25 @@ export function useChannelManager(
           channels: country.channels.filter(id => id !== channelId)
         }));
         
+        // Remove the channel from any genres
+        const updatedGenres = playlist.genres.map(genre => ({
+          ...genre,
+          channels: genre.channels.filter(id => id !== channelId)
+        }));
+        
+        // Remove the channel from any broadcasters
+        const updatedBroadcasters = playlist.broadcasters.map(broadcaster => ({
+          ...broadcaster,
+          channels: broadcaster.channels.filter(id => id !== channelId)
+        }));
+        
         return {
           ...playlist,
           channels: updatedChannels,
           groups: updatedGroups,
-          countries: updatedCountries
+          countries: updatedCountries,
+          genres: updatedGenres,
+          broadcasters: updatedBroadcasters
         };
       }
       return playlist;
@@ -213,11 +308,101 @@ export function useChannelManager(
           }
         }
         
+        // Add the channel to its genre
+        let updatedGenres = [...playlist.genres];
+        if (newChannel.genre) {
+          const existingGenre = updatedGenres.find(g => g.name === newChannel.genre);
+          if (existingGenre) {
+            updatedGenres = updatedGenres.map(genre => {
+              if (genre.name === newChannel.genre) {
+                return {
+                  ...genre,
+                  channels: [...genre.channels, newChannel.id]
+                };
+              }
+              return genre;
+            });
+          } else {
+            // Create new genre
+            updatedGenres.push({
+              id: uuidv4(),
+              name: newChannel.genre,
+              channels: [newChannel.id]
+            });
+          }
+        } else {
+          // Add to Unknown genre
+          const unknownGenre = updatedGenres.find(g => g.name === "Unknown");
+          if (unknownGenre) {
+            updatedGenres = updatedGenres.map(genre => {
+              if (genre.name === "Unknown") {
+                return {
+                  ...genre,
+                  channels: [...genre.channels, newChannel.id]
+                };
+              }
+              return genre;
+            });
+          } else {
+            updatedGenres.push({
+              id: uuidv4(),
+              name: "Unknown",
+              channels: [newChannel.id]
+            });
+          }
+        }
+        
+        // Add the channel to its broadcaster
+        let updatedBroadcasters = [...playlist.broadcasters];
+        if (newChannel.broadcaster) {
+          const existingBroadcaster = updatedBroadcasters.find(b => b.name === newChannel.broadcaster);
+          if (existingBroadcaster) {
+            updatedBroadcasters = updatedBroadcasters.map(broadcaster => {
+              if (broadcaster.name === newChannel.broadcaster) {
+                return {
+                  ...broadcaster,
+                  channels: [...broadcaster.channels, newChannel.id]
+                };
+              }
+              return broadcaster;
+            });
+          } else {
+            // Create new broadcaster
+            updatedBroadcasters.push({
+              id: uuidv4(),
+              name: newChannel.broadcaster,
+              channels: [newChannel.id]
+            });
+          }
+        } else {
+          // Add to Unknown broadcaster
+          const unknownBroadcaster = updatedBroadcasters.find(b => b.name === "Unknown");
+          if (unknownBroadcaster) {
+            updatedBroadcasters = updatedBroadcasters.map(broadcaster => {
+              if (broadcaster.name === "Unknown") {
+                return {
+                  ...broadcaster,
+                  channels: [...broadcaster.channels, newChannel.id]
+                };
+              }
+              return broadcaster;
+            });
+          } else {
+            updatedBroadcasters.push({
+              id: uuidv4(),
+              name: "Unknown",
+              channels: [newChannel.id]
+            });
+          }
+        }
+        
         return {
           ...playlist,
           channels: updatedChannels,
           groups: updatedGroups,
-          countries: updatedCountries
+          countries: updatedCountries,
+          genres: updatedGenres,
+          broadcasters: updatedBroadcasters
         };
       }
       return playlist;

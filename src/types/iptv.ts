@@ -8,6 +8,8 @@ export interface IPTVChannel {
   status?: 'online' | 'offline' | 'unknown' | 'testing';
   lastChecked?: Date;
   country?: string;
+  genre?: string;
+  broadcaster?: string;
 }
 
 export interface IPTVGroup {
@@ -23,6 +25,18 @@ export interface IPTVCountry {
   channels: string[]; // channel ids
 }
 
+export interface IPTVGenre {
+  id: string;
+  name: string;
+  channels: string[]; // channel ids
+}
+
+export interface IPTVBroadcaster {
+  id: string;
+  name: string;
+  channels: string[]; // channel ids
+}
+
 export interface IPTVPlaylist {
   id: string;
   name: string;
@@ -30,4 +44,6 @@ export interface IPTVPlaylist {
   channels: IPTVChannel[];
   groups: IPTVGroup[];
   countries: IPTVCountry[];
+  genres: IPTVGenre[];
+  broadcasters: IPTVBroadcaster[];
 }

@@ -14,7 +14,6 @@ import {
   TableBody, 
   TableCell 
 } from "@/components/ui/table";
-import { Skeleton } from "@/components/ui/skeleton";
 
 const Countries = () => {
   const { currentPlaylist, setSelectedChannel } = useIPTV();
@@ -137,6 +136,8 @@ const Countries = () => {
                           onClick={() => handleChannelSelect(channelId)}
                         >
                           {channel.name}
+                          {channel.genre && <span className="ml-2 text-xs text-muted-foreground">({channel.genre})</span>}
+                          {channel.broadcaster && <span className="ml-2 text-xs text-muted-foreground">[{channel.broadcaster}]</span>}
                         </div>
                       );
                     })
