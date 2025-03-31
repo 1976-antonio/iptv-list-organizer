@@ -1,17 +1,15 @@
 
-import React, { useState, useEffect } from "react";
+import React, { useState } from "react";
 import AppLayout from "@/components/layout/AppLayout";
 import { useIPTV } from "@/context/IPTVContext";
-import FileUpload from "@/components/FileUpload";
-import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Input } from "@/components/ui/input";
-import { ScrollArea } from "@/components/ui/scroll-area";
-import { Separator } from "@/components/ui/separator";
-import { Search, RefreshCw, CheckCircle, XCircle, Circle, Flag, Music, Tv, Film, Shield } from "lucide-react";
 import VPNToggle from "@/components/VPNToggle";
 import { VPNState } from "@/types/iptv";
+import { Shield, RefreshCw } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import PlaylistSelection from "@/components/playlist/PlaylistSelection";
+import ChannelList from "@/components/channels/ChannelList";
+import ChannelDetails from "@/components/channels/ChannelDetails";
 
 const Index = () => {
   const { 
@@ -24,79 +22,11 @@ const Index = () => {
     testChannel
   } = useIPTV();
   
-  const [searchTerm, setSearchTerm] = useState("");
-  const [filteredChannels, setFilteredChannels] = useState<Array<any>>([]);
-  const [activeCategory, setActiveCategory] = useState<string | null>(null);
-  const [activeCategoryType, setActiveCategoryType] = useState<"group" | "country" | "genre" | "broadcaster" | null>(null);
   const [vpnState, setVpnState] = useState<VPNState>({
     enabled: false,
     status: 'disconnected'
   });
   
-  useEffect(() => {
-    if (!currentPlaylist) return;
-    
-    let filtered = currentPlaylist.channels;
-    
-    if (searchTerm) {
-      filtered = filtered.filter(channel => 
-        channel.name.toLowerCase().includes(searchTerm.toLowerCase())
-      );
-    }
-    
-    if (activeCategory && activeCategoryType) {
-      switch (activeCategoryType) {
-        case "group":
-          filtered = filtered.filter(channel => channel.group === activeCategory);
-          break;
-        case "country":
-          filtered = filtered.filter(channel => channel.country === activeCategory);
-          break;
-        case "genre":
-          filtered = filtered.filter(channel => channel.genre === activeCategory);
-          break;
-        case "broadcaster":
-          filtered = filtered.filter(channel => channel.broadcaster === activeCategory);
-          break;
-      }
-    }
-    
-    setFilteredChannels(filtered);
-  }, [currentPlaylist, searchTerm, activeCategory, activeCategoryType]);
-
-  const handleChannelSelect = (channel) => {
-    setSelectedChannel(channel);
-  };
-
-  const handleCategorySelect = (category: string, type: "group" | "country" | "genre" | "broadcaster") => {
-    setActiveCategory(category);
-    setActiveCategoryType(type);
-  };
-  
-  const getStatusIcon = (status) => {
-    switch (status) {
-      case 'online':
-        return <CheckCircle className="h-4 w-4 text-green-500" />;
-      case 'offline':
-        return <XCircle className="h-4 w-4 text-red-500" />;
-      case 'testing':
-        return <RefreshCw className="h-4 w-4 text-amber-500 animate-spin" />;
-      default:
-        return <Circle className="h-4 w-4 text-gray-400" />;
-    }
-  };
-
-  // Function to get stream URL with VPN if enabled
-  const getStreamUrl = (url: string): string => {
-    if (!vpnState.enabled || vpnState.status !== 'connected') {
-      return url;
-    }
-    
-    // In a real app, this would route through an actual proxy
-    // For demo purposes, we'll just add a parameter to indicate VPN is in use
-    return url + (url.includes('?') ? '&' : '?') + 'vpn=true';
-  };
-
   const handleVPNChange = (newVpnState: VPNState) => {
     setVpnState(newVpnState);
   };
@@ -104,10 +34,10 @@ const Index = () => {
   if (playlists.length === 0) {
     return (
       <AppLayout>
-        <div className="container max-w-4xl mx-auto py-12">
-          <h1 className="text-3xl font-bold mb-8 text-center">IPTV Lista Organizer</h1>
-          <FileUpload />
-        </div>
+        <PlaylistSelection 
+          playlists={playlists}
+          onSelectPlaylist={setCurrentPlaylist}
+        />
       </AppLayout>
     );
   }
@@ -133,156 +63,18 @@ const Index = () => {
                 </CardTitle>
               </CardHeader>
               <CardContent>
-                <div className="relative mb-4">
-                  <Search className="absolute left-2 top-2.5 h-4 w-4 text-muted-foreground" />
-                  <Input
-                    placeholder="Cerca canali..."
-                    className="pl-8"
-                    value={searchTerm}
-                    onChange={(e) => setSearchTerm(e.target.value)}
+                {currentPlaylist && (
+                  <ChannelList 
+                    channels={currentPlaylist.channels}
+                    groups={currentPlaylist.groups}
+                    countries={currentPlaylist.countries}
+                    genres={currentPlaylist.genres}
+                    broadcasters={currentPlaylist.broadcasters}
+                    selectedChannel={selectedChannel}
+                    onChannelSelect={setSelectedChannel}
+                    onTestAllChannels={testAllChannels}
                   />
-                </div>
-                
-                <Tabs defaultValue="all">
-                  <TabsList className="w-full mb-4 flex overflow-x-auto">
-                    <TabsTrigger value="all" onClick={() => {setActiveCategory(null); setActiveCategoryType(null);}}>
-                      Tutti
-                    </TabsTrigger>
-                    <TabsTrigger value="categories">Categorie</TabsTrigger>
-                    <TabsTrigger value="countries">Paesi</TabsTrigger>
-                    <TabsTrigger value="genres">Generi</TabsTrigger>
-                    <TabsTrigger value="broadcasters">Emittenti</TabsTrigger>
-                  </TabsList>
-                  
-                  <TabsContent value="all">
-                    <ScrollArea className="h-[60vh] pr-4">
-                      {filteredChannels && filteredChannels.length > 0 ? (
-                        filteredChannels.map((channel) => (
-                          <div 
-                            key={channel.id} 
-                            className={`flex items-center p-2 mb-1 rounded-md cursor-pointer ${
-                              selectedChannel?.id === channel.id 
-                                ? 'bg-primary/10' 
-                                : 'hover:bg-muted'
-                            }`}
-                            onClick={() => handleChannelSelect(channel)}
-                          >
-                            <div className="mr-2">
-                              {getStatusIcon(channel.status)}
-                            </div>
-                            <div className="flex-1 truncate">
-                              {channel.name}
-                            </div>
-                            <div className="text-xs text-muted-foreground">
-                              {channel.group}
-                            </div>
-                          </div>
-                        ))
-                      ) : (
-                        <div className="flex flex-col items-center justify-center py-4 text-center">
-                          <div className="text-muted-foreground">
-                            Nessun canale trovato
-                          </div>
-                        </div>
-                      )}
-                    </ScrollArea>
-                  </TabsContent>
-                  
-                  <TabsContent value="categories">
-                    <ScrollArea className="h-[60vh] pr-4">
-                      {currentPlaylist?.groups && currentPlaylist.groups.length > 0 ? (
-                        currentPlaylist.groups.map((group) => (
-                          <div key={group.id} className="mb-4">
-                            <div 
-                              className="font-medium p-2 cursor-pointer hover:bg-muted rounded-md"
-                              onClick={() => handleCategorySelect(group.name, "group")}
-                            >
-                              {group.name} ({group.channels.length})
-                            </div>
-                          </div>
-                        ))
-                      ) : (
-                        <div className="flex flex-col items-center justify-center py-4 text-center">
-                          <div className="text-muted-foreground">
-                            Nessuna categoria trovata
-                          </div>
-                        </div>
-                      )}
-                    </ScrollArea>
-                  </TabsContent>
-                  
-                  <TabsContent value="countries">
-                    <ScrollArea className="h-[60vh] pr-4">
-                      {currentPlaylist?.countries && currentPlaylist.countries.length > 0 ? (
-                        currentPlaylist.countries.map((country) => (
-                          <div key={country.id} className="mb-4">
-                            <div 
-                              className="font-medium p-2 cursor-pointer hover:bg-muted rounded-md flex items-center"
-                              onClick={() => handleCategorySelect(country.name, "country")}
-                            >
-                              <Flag className="h-4 w-4 mr-2" />
-                              {country.name} ({country.channels.length})
-                            </div>
-                          </div>
-                        ))
-                      ) : (
-                        <div className="flex flex-col items-center justify-center py-4 text-center">
-                          <div className="text-muted-foreground">
-                            Nessun paese trovato
-                          </div>
-                        </div>
-                      )}
-                    </ScrollArea>
-                  </TabsContent>
-                  
-                  <TabsContent value="genres">
-                    <ScrollArea className="h-[60vh] pr-4">
-                      {currentPlaylist?.genres && currentPlaylist.genres.length > 0 ? (
-                        currentPlaylist.genres.map((genre) => (
-                          <div key={genre.id} className="mb-4">
-                            <div 
-                              className="font-medium p-2 cursor-pointer hover:bg-muted rounded-md flex items-center"
-                              onClick={() => handleCategorySelect(genre.name, "genre")}
-                            >
-                              <Film className="h-4 w-4 mr-2" />
-                              {genre.name} ({genre.channels.length})
-                            </div>
-                          </div>
-                        ))
-                      ) : (
-                        <div className="flex flex-col items-center justify-center py-4 text-center">
-                          <div className="text-muted-foreground">
-                            Nessun genere trovato
-                          </div>
-                        </div>
-                      )}
-                    </ScrollArea>
-                  </TabsContent>
-                  
-                  <TabsContent value="broadcasters">
-                    <ScrollArea className="h-[60vh] pr-4">
-                      {currentPlaylist?.broadcasters && currentPlaylist.broadcasters.length > 0 ? (
-                        currentPlaylist.broadcasters.map((broadcaster) => (
-                          <div key={broadcaster.id} className="mb-4">
-                            <div 
-                              className="font-medium p-2 cursor-pointer hover:bg-muted rounded-md flex items-center"
-                              onClick={() => handleCategorySelect(broadcaster.name, "broadcaster")}
-                            >
-                              <Tv className="h-4 w-4 mr-2" />
-                              {broadcaster.name} ({broadcaster.channels.length})
-                            </div>
-                          </div>
-                        ))
-                      ) : (
-                        <div className="flex flex-col items-center justify-center py-4 text-center">
-                          <div className="text-muted-foreground">
-                            Nessuna emittente trovata
-                          </div>
-                        </div>
-                      )}
-                    </ScrollArea>
-                  </TabsContent>
-                </Tabs>
+                )}
               </CardContent>
             </Card>
           </div>
@@ -303,112 +95,11 @@ const Index = () => {
                 </CardTitle>
               </CardHeader>
               <CardContent>
-                {selectedChannel ? (
-                  <div className="space-y-4">
-                    <div className="flex justify-between">
-                      <div>
-                        <div className="text-sm text-muted-foreground">
-                          Gruppo: {selectedChannel.group}
-                        </div>
-                        {selectedChannel.country && (
-                          <div className="text-sm text-muted-foreground flex items-center mt-1">
-                            <Flag className="h-3 w-3 mr-1" />
-                            Paese: {selectedChannel.country}
-                          </div>
-                        )}
-                        {selectedChannel.genre && (
-                          <div className="text-sm text-muted-foreground flex items-center mt-1">
-                            <Film className="h-3 w-3 mr-1" />
-                            Genere: {selectedChannel.genre}
-                          </div>
-                        )}
-                        {selectedChannel.broadcaster && (
-                          <div className="text-sm text-muted-foreground flex items-center mt-1">
-                            <Tv className="h-3 w-3 mr-1" />
-                            Emittente: {selectedChannel.broadcaster}
-                          </div>
-                        )}
-                        <div className="flex items-center mt-1">
-                          {getStatusIcon(selectedChannel.status)}
-                          <span className="ml-1 text-sm">
-                            {selectedChannel.status === 'online' ? 'Online' : 
-                             selectedChannel.status === 'offline' ? 'Offline' : 
-                             selectedChannel.status === 'testing' ? 'Testing...' : 'Non testato'}
-                          </span>
-                        </div>
-                      </div>
-                      <Button 
-                        onClick={() => testChannel(selectedChannel)}
-                        variant="outline" 
-                        size="sm"
-                      >
-                        <RefreshCw className="h-4 w-4 mr-2" />
-                        Test
-                      </Button>
-                    </div>
-                    
-                    <Separator />
-                    
-                    <div>
-                      <div className="text-sm font-medium mb-1">Stream URL:</div>
-                      <div className="p-2 bg-muted rounded-md text-xs break-all">
-                        {selectedChannel.url}
-                        {vpnState.enabled && vpnState.status === 'connected' && (
-                          <span className="inline-flex items-center ml-2 text-green-600">
-                            <Shield className="h-3 w-3 mr-1" /> VPN Protected
-                          </span>
-                        )}
-                      </div>
-                    </div>
-                    
-                    {selectedChannel.logo && (
-                      <div className="mt-2">
-                        <div className="text-sm font-medium mb-1">Logo:</div>
-                        <img 
-                          src={selectedChannel.logo} 
-                          alt={`${selectedChannel.name} logo`} 
-                          className="h-16 object-contain"
-                          onError={(e) => {
-                            e.currentTarget.style.display = 'none';
-                          }}
-                        />
-                      </div>
-                    )}
-                    
-                    <Separator />
-                    
-                    <div>
-                      <div className="text-sm font-medium mb-2 flex items-center">
-                        Anteprima:
-                        {vpnState.enabled && vpnState.status === 'connected' && (
-                          <span className="inline-flex items-center ml-2 text-xs text-green-600 bg-green-50 px-2 py-0.5 rounded-full">
-                            <Shield className="h-3 w-3 mr-1" /> VPN attivo
-                          </span>
-                        )}
-                      </div>
-                      <div className="video-container bg-black rounded-md">
-                        <video 
-                          src={getStreamUrl(selectedChannel.url)}
-                          controls
-                          autoPlay
-                          className="w-full h-full"
-                          onError={(e) => {
-                            const video = e.currentTarget;
-                            video.poster = "/placeholder.svg";
-                          }}
-                        >
-                          Il tuo browser non supporta la riproduzione video.
-                        </video>
-                      </div>
-                    </div>
-                  </div>
-                ) : (
-                  <div className="flex flex-col items-center justify-center py-12 text-center">
-                    <div className="text-muted-foreground">
-                      Seleziona un canale dalla lista per visualizzarne i dettagli
-                    </div>
-                  </div>
-                )}
+                <ChannelDetails 
+                  channel={selectedChannel}
+                  vpnState={vpnState}
+                  onTestChannel={testChannel}
+                />
               </CardContent>
             </Card>
           </div>
