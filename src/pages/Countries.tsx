@@ -23,7 +23,7 @@ const Countries = () => {
   useEffect(() => {
     if (!currentPlaylist) return;
     
-    let filtered = currentPlaylist.countries;
+    let filtered = [...currentPlaylist.countries];
     
     if (searchTerm) {
       filtered = filtered.filter(country => 
@@ -32,7 +32,7 @@ const Countries = () => {
     }
     
     // Sort countries by name
-    filtered = [...filtered].sort((a, b) => a.name.localeCompare(b.name));
+    filtered = filtered.sort((a, b) => a.name.localeCompare(b.name));
     
     setFilteredCountries(filtered);
   }, [currentPlaylist, searchTerm]);
@@ -85,7 +85,7 @@ const Countries = () => {
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {filteredCountries?.map((country) => (
+                  {filteredCountries.map((country) => (
                     <TableRow key={country.id}>
                       <TableCell className="font-medium">{country.name}</TableCell>
                       <TableCell className="text-right">{country.channels.length}</TableCell>
@@ -95,7 +95,7 @@ const Countries = () => {
               </Table>
             </div>
             
-            {filteredCountries?.length > 0 && (
+            {filteredCountries.length > 0 && (
               <div className="mt-6">
                 <h3 className="text-lg font-medium mb-4">
                   Canali per {filteredCountries[0].name}
