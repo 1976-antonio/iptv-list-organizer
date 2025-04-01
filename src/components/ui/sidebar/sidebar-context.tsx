@@ -47,7 +47,7 @@ export const SidebarProvider = React.forwardRef<
     },
     ref
   ) => {
-    const { isMobile, toggleSidebar } = useIsMobile()
+    const { isMobile, sidebarOpen, toggleSidebar: mobileToggleSidebar } = useIsMobile()
     const [openMobile, setOpenMobile] = React.useState(false)
 
     const [_open, _setOpen] = React.useState(defaultOpen)
