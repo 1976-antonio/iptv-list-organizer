@@ -1,6 +1,15 @@
 
 import React from "react";
 import { useNavigate, useLocation } from "react-router-dom";
+import { 
+  Sidebar, 
+  SidebarContent, 
+  SidebarHeader,
+  SidebarMenu,
+  SidebarMenuItem,
+  SidebarMenuButton,
+  useSidebar
+} from "@/components/ui/sidebar";
 import { Button } from "@/components/ui/button";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { cn } from "@/lib/utils";
@@ -14,12 +23,12 @@ import {
   Server, 
   List
 } from "lucide-react";
-import { useIsMobile } from "@/hooks/use-mobile";
 
-const AppSidebar = ({ collapsed = false }) => {
+const AppSidebar = () => {
   const navigate = useNavigate();
   const location = useLocation();
-  const { isMobile, toggleSidebar } = useIsMobile();
+  const { isMobile, toggleSidebar, state } = useSidebar();
+  const collapsed = state === "collapsed";
   
   const isActive = (path: string) => {
     return location.pathname === path;
@@ -36,13 +45,8 @@ const AppSidebar = ({ collapsed = false }) => {
   ];
 
   return (
-    <div
-      className={cn(
-        "flex h-screen flex-col border-r bg-background transition-all duration-300 ease-in-out",
-        collapsed ? "w-16" : "w-64"
-      )}
-    >
-      <div className="flex h-16 items-center border-b px-4">
+    <Sidebar>
+      <SidebarHeader className="flex h-16 items-center border-b px-4">
         {isMobile && (
           <Button
             variant="ghost"
@@ -54,26 +58,30 @@ const AppSidebar = ({ collapsed = false }) => {
           </Button>
         )}
         {!collapsed && <h1 className="text-xl font-semibold">IPTV Manager</h1>}
-      </div>
-      <ScrollArea className="flex-1">
-        <div className="flex flex-col gap-1 p-2">
-          {links.map((link) => (
-            <Button
-              key={link.path}
-              variant={isActive(link.path) ? "secondary" : "ghost"}
-              className={cn(
-                "justify-start",
-                collapsed ? "justify-center px-2" : ""
-              )}
-              onClick={() => navigate(link.path)}
-            >
-              {link.icon}
-              {!collapsed && <span className="ml-2">{link.name}</span>}
-            </Button>
-          ))}
-        </div>
-      </ScrollArea>
-    </div>
+      </SidebarHeader>
+      <SidebarContent>
+        <ScrollArea className="flex-1">
+          <SidebarMenu className="flex flex-col gap-1 p-2">
+            {links.map((link) => (
+              <SidebarMenuItem key={link.path}>
+                <SidebarMenuButton
+                  variant={isActive(link.path) ? "default" : "outline"}
+                  className={cn(
+                    "justify-start",
+                    collapsed ? "justify-center px-2" : ""
+                  )}
+                  onClick={() => navigate(link.path)}
+                  tooltip={collapsed ? link.name : undefined}
+                >
+                  {link.icon}
+                  {!collapsed && <span className="ml-2">{link.name}</span>}
+                </SidebarMenuButton>
+              </SidebarMenuItem>
+            ))}
+          </SidebarMenu>
+        </ScrollArea>
+      </SidebarContent>
+    </Sidebar>
   );
 };
 

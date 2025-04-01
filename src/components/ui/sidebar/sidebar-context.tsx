@@ -1,6 +1,13 @@
 
 import * as React from "react"
-import { SidebarContext as SidebarContextType, SIDEBAR_COOKIE_NAME, SIDEBAR_COOKIE_MAX_AGE, SIDEBAR_KEYBOARD_SHORTCUT, SIDEBAR_WIDTH, SIDEBAR_WIDTH_ICON } from "./types"
+import { 
+  SidebarContext as SidebarContextType, 
+  SIDEBAR_COOKIE_NAME, 
+  SIDEBAR_COOKIE_MAX_AGE, 
+  SIDEBAR_KEYBOARD_SHORTCUT, 
+  SIDEBAR_WIDTH, 
+  SIDEBAR_WIDTH_ICON 
+} from "./types"
 import { useIsMobile } from "@/hooks/use-mobile"
 import { TooltipProvider } from "@/components/ui/tooltip"
 
@@ -40,8 +47,7 @@ export const SidebarProvider = React.forwardRef<
     },
     ref
   ) => {
-    const mobileInfo = useIsMobile()
-    const isMobile = mobileInfo.isMobile
+    const { isMobile, toggleSidebar } = useIsMobile()
     const [openMobile, setOpenMobile] = React.useState(false)
 
     const [_open, _setOpen] = React.useState(defaultOpen)
@@ -91,9 +97,9 @@ export const SidebarProvider = React.forwardRef<
         isMobile,
         openMobile,
         setOpenMobile,
-        toggleSidebar: mobileInfo.toggleSidebar,
+        toggleSidebar,
       }),
-      [state, open, setOpen, isMobile, openMobile, setOpenMobile, mobileInfo.toggleSidebar]
+      [state, open, setOpen, isMobile, openMobile, setOpenMobile, toggleSidebar]
     )
 
     return (
