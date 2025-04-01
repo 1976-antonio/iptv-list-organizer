@@ -1,6 +1,6 @@
 
 import React from "react";
-import { ListVideo, FolderOpen, Settings, Search, Flag } from "lucide-react";
+import { ListVideo, FolderOpen, Settings, Search } from "lucide-react";
 import {
   Sidebar,
   SidebarContent,
@@ -25,11 +25,6 @@ const menuItems = [
     title: "Categorie",
     url: "/categories",
     icon: FolderOpen,
-  },
-  {
-    title: "Paesi",
-    url: "/countries",
-    icon: Flag,
   },
   {
     title: "Test Stream",

@@ -7,7 +7,6 @@ import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { IPTVProvider } from "./context/IPTVContext";
 import Index from "./pages/Index";
 import Categories from "./pages/Categories";
-import Countries from "./pages/Countries"; 
 import TestStream from "./pages/TestStream";
 import Settings from "./pages/Settings";
 import NotFound from "./pages/NotFound";
@@ -24,7 +23,6 @@ const App = () => (
           <Routes>
             <Route path="/" element={<Index />} />
             <Route path="/categories" element={<Categories />} />
-            <Route path="/countries" element={<Countries />} />
             <Route path="/test" element={<TestStream />} />
             <Route path="/settings" element={<Settings />} />
             <Route path="*" element={<NotFound />} />
