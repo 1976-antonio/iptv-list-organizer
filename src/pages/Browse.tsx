@@ -17,7 +17,7 @@ import {
 const Browse = () => {
   const { currentPlaylist, setSelectedChannel } = useIPTV();
   const [searchTerm, setSearchTerm] = useState("");
-  const [filteredChannels, setFilteredChannels] = useState<typeof currentPlaylist?.channels | []>([]);
+  const [filteredChannels, setFilteredChannels] = useState<any[]>([]); // Initialize as empty array
   
   useEffect(() => {
     if (!currentPlaylist) return;

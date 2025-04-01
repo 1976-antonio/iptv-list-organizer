@@ -18,7 +18,7 @@ import {
 const Countries = () => {
   const { currentPlaylist, setSelectedChannel } = useIPTV();
   const [searchTerm, setSearchTerm] = useState("");
-  const [filteredCountries, setFilteredCountries] = useState<typeof currentPlaylist?.countries>([]);
+  const [filteredCountries, setFilteredCountries] = useState<any[]>([]); // Initialize as empty array
   
   useEffect(() => {
     if (!currentPlaylist) return;

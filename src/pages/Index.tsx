@@ -25,7 +25,7 @@ const Index = () => {
   } = useIPTV();
   
   const [searchTerm, setSearchTerm] = useState("");
-  const [filteredChannels, setFilteredChannels] = useState<typeof currentPlaylist?.channels | []>([]);
+  const [filteredChannels, setFilteredChannels] = useState<any[]>([]); // Initialize as empty array
   const [activeCategory, setActiveCategory] = useState<string | null>(null);
   
   useEffect(() => {
