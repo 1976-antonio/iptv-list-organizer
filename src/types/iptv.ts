@@ -7,11 +7,19 @@ export interface IPTVChannel {
   group: string;
   status?: 'online' | 'offline' | 'unknown' | 'testing';
   lastChecked?: Date;
+  country?: string;
 }
 
 export interface IPTVGroup {
   id: string;
   name: string;
+  channels: string[]; // channel ids
+}
+
+export interface IPTVCountry {
+  id: string;
+  name: string;
+  code: string;
   channels: string[]; // channel ids
 }
 
@@ -21,4 +29,5 @@ export interface IPTVPlaylist {
   lastUpdated: Date;
   channels: IPTVChannel[];
   groups: IPTVGroup[];
+  countries: IPTVCountry[];
 }

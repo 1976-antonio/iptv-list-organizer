@@ -1,6 +1,6 @@
 
 import { useState } from "react";
-import { IPTVChannel, IPTVPlaylist } from "@/types/iptv";
+import { IPTVChannel, IPTVPlaylist, IPTVCountry } from "@/types/iptv";
 import { useToast } from "@/hooks/use-toast";
 import { v4 as uuidv4 } from "uuid";
 
@@ -25,6 +25,53 @@ export function useChannelManager(
           }
           return channel;
         });
+        
+        // If the country changed, update the countries list
+        if (updates.country && currentPlaylist.channels.find(c => c.id === channelId)?.country !== updates.country) {
+          const originalChannel = currentPlaylist.channels.find(c => c.id === channelId);
+          let updatedCountries = [...playlist.countries];
+          
+          // Remove from old country
+          if (originalChannel?.country) {
+            updatedCountries = updatedCountries.map(country => {
+              if (country.name === originalChannel.country) {
+                return {
+                  ...country,
+                  channels: country.channels.filter(id => id !== channelId)
+                };
+              }
+              return country;
+            });
+          }
+          
+          // Add to new country
+          const existingCountry = updatedCountries.find(c => c.name === updates.country);
+          if (existingCountry) {
+            updatedCountries = updatedCountries.map(country => {
+              if (country.name === updates.country) {
+                return {
+                  ...country,
+                  channels: [...country.channels, channelId]
+                };
+              }
+              return country;
+            });
+          } else {
+            // Create new country
+            updatedCountries.push({
+              id: uuidv4(),
+              name: updates.country,
+              code: updates.country.substring(0, 2).toLowerCase(),
+              channels: [channelId]
+            });
+          }
+          
+          return { 
+            ...playlist, 
+            channels: updatedChannels,
+            countries: updatedCountries
+          };
+        }
         
         return { ...playlist, channels: updatedChannels };
       }
@@ -55,10 +102,17 @@ export function useChannelManager(
           channels: group.channels.filter(id => id !== channelId)
         }));
         
+        // Remove the channel from any countries
+        const updatedCountries = playlist.countries.map(country => ({
+          ...country,
+          channels: country.channels.filter(id => id !== channelId)
+        }));
+        
         return {
           ...playlist,
           channels: updatedChannels,
-          groups: updatedGroups
+          groups: updatedGroups,
+          countries: updatedCountries
         };
       }
       return playlist;
@@ -113,10 +167,57 @@ export function useChannelManager(
           });
         }
         
+        // Add the channel to its country
+        let updatedCountries = [...playlist.countries];
+        if (newChannel.country) {
+          const existingCountry = updatedCountries.find(c => c.name === newChannel.country);
+          if (existingCountry) {
+            updatedCountries = updatedCountries.map(country => {
+              if (country.name === newChannel.country) {
+                return {
+                  ...country,
+                  channels: [...country.channels, newChannel.id]
+                };
+              }
+              return country;
+            });
+          } else {
+            // Create new country
+            updatedCountries.push({
+              id: uuidv4(),
+              name: newChannel.country,
+              code: newChannel.country.substring(0, 2).toLowerCase(),
+              channels: [newChannel.id]
+            });
+          }
+        } else {
+          // Add to Unknown country
+          const unknownCountry = updatedCountries.find(c => c.name === "Unknown");
+          if (unknownCountry) {
+            updatedCountries = updatedCountries.map(country => {
+              if (country.name === "Unknown") {
+                return {
+                  ...country,
+                  channels: [...country.channels, newChannel.id]
+                };
+              }
+              return country;
+            });
+          } else {
+            updatedCountries.push({
+              id: uuidv4(),
+              name: "Unknown",
+              code: "unknown",
+              channels: [newChannel.id]
+            });
+          }
+        }
+        
         return {
           ...playlist,
           channels: updatedChannels,
-          groups: updatedGroups
+          groups: updatedGroups,
+          countries: updatedCountries
         };
       }
       return playlist;

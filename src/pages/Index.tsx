@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from "react";
 import AppLayout from "@/components/layout/AppLayout";
 import { useIPTV } from "@/context/IPTVContext";
@@ -9,7 +8,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Input } from "@/components/ui/input";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Separator } from "@/components/ui/separator";
-import { Search, RefreshCw, CheckCircle, XCircle, Circle } from "lucide-react";
+import { Search, RefreshCw, CheckCircle, XCircle, Circle, Flag } from "lucide-react";
 
 const Index = () => {
   const { 
@@ -29,7 +28,6 @@ const Index = () => {
   useEffect(() => {
     if (!currentPlaylist) return;
     
-    // Update filtered channels whenever the current playlist or search term changes
     let filtered = currentPlaylist.channels;
     
     if (searchTerm) {
@@ -45,12 +43,10 @@ const Index = () => {
     setFilteredChannels(filtered);
   }, [currentPlaylist, searchTerm, activeCategory]);
 
-  // Handler for selecting a channel
   const handleChannelSelect = (channel) => {
     setSelectedChannel(channel);
   };
   
-  // Get status icon based on channel status
   const getStatusIcon = (status) => {
     switch (status) {
       case 'online':
@@ -64,7 +60,6 @@ const Index = () => {
     }
   };
 
-  // Show the file upload if no playlists are available
   if (playlists.length === 0) {
     return (
       <AppLayout>
@@ -113,6 +108,7 @@ const Index = () => {
                       Tutti
                     </TabsTrigger>
                     <TabsTrigger value="categories">Categorie</TabsTrigger>
+                    <TabsTrigger value="countries">Paesi</TabsTrigger>
                   </TabsList>
                   
                   <TabsContent value="all">
@@ -155,6 +151,22 @@ const Index = () => {
                       ))}
                     </ScrollArea>
                   </TabsContent>
+                  
+                  <TabsContent value="countries">
+                    <ScrollArea className="h-[60vh] pr-4">
+                      {currentPlaylist?.countries.map((country) => (
+                        <div key={country.id} className="mb-4">
+                          <div 
+                            className="font-medium p-2 cursor-pointer hover:bg-muted rounded-md flex items-center"
+                            onClick={() => setActiveCategory(country.name)}
+                          >
+                            <Flag className="h-4 w-4 mr-2" />
+                            {country.name} ({country.channels.length})
+                          </div>
+                        </div>
+                      ))}
+                    </ScrollArea>
+                  </TabsContent>
                 </Tabs>
               </CardContent>
             </Card>
@@ -175,6 +187,12 @@ const Index = () => {
                         <div className="text-sm text-muted-foreground">
                           Gruppo: {selectedChannel.group}
                         </div>
+                        {selectedChannel.country && (
+                          <div className="text-sm text-muted-foreground flex items-center mt-1">
+                            <Flag className="h-3 w-3 mr-1" />
+                            Paese: {selectedChannel.country}
+                          </div>
+                        )}
                         <div className="flex items-center mt-1">
                           {getStatusIcon(selectedChannel.status)}
                           <span className="ml-1 text-sm">
