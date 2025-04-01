@@ -1,4 +1,6 @@
+
 import { IPTVPlaylist, StreamingServer } from "@/types/iptv";
+import { useState, useEffect } from "react";
 
 // Function to get data from local storage
 export function getStorage<T>(key: string, initialValue: T): T {
@@ -25,6 +27,46 @@ export const PLAYLISTS_KEY = "iptv-playlists";
 
 // Define the storage keys for StreamingServer
 export const STREAMING_SERVERS_KEY = "iptv-streaming-servers";
+
+// Function to safely store playlists handling quota limits
+export function safelyStorePlaylist(playlists: IPTVPlaylist[]) {
+  try {
+    // Try to save all playlists
+    setStorage(PLAYLISTS_KEY, playlists);
+    return { success: true };
+  } catch (error) {
+    console.error("Error storing playlists:", error);
+    
+    // If we encounter a quota error, try to reduce the size
+    if (error instanceof DOMException && error.name === 'QuotaExceededError') {
+      // Try to save a smaller version by limiting channels per playlist
+      try {
+        const reducedPlaylists = playlists.map(playlist => {
+          if (playlist.channels.length > 200) {
+            return {
+              ...playlist,
+              channels: playlist.channels.slice(0, 200)
+            };
+          }
+          return playlist;
+        });
+        
+        setStorage(PLAYLISTS_KEY, reducedPlaylists);
+        return { 
+          success: true, 
+          message: "Alcune playlist sono state ridotte a causa dei limiti di spazio." 
+        };
+      } catch (innerError) {
+        return { 
+          success: false, 
+          message: "Impossibile salvare le playlist. Spazio di archiviazione insufficiente." 
+        };
+      }
+    }
+    
+    return { success: false, message: "Errore nel salvare le playlist." };
+  }
+}
 
 // Custom hook for using local storage
 export function useStorage<T>(key: string, initialValue: T): [T, (value: T | ((val: T) => T)) => void] {

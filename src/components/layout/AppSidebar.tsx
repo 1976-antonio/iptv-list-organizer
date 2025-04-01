@@ -14,12 +14,12 @@ import {
   Server, 
   List
 } from "lucide-react";
-import { useMobile } from "@/hooks/use-mobile";
+import { useIsMobile } from "@/hooks/use-mobile";
 
 const AppSidebar = ({ collapsed = false }) => {
   const navigate = useNavigate();
   const location = useLocation();
-  const { isMobile, toggleSidebar } = useMobile();
+  const { isMobile, toggleSidebar } = useIsMobile();
   
   const isActive = (path: string) => {
     return location.pathname === path;

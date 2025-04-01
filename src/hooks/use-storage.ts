@@ -1,6 +1,6 @@
 
 import { useState, useEffect } from 'react';
-import { safelyStorePlaylist } from '@/utils/storage';
+import { safelyStorePlaylist, getStorage, setStorage } from '@/utils/storage';
 import { IPTVPlaylist } from '@/types/iptv';
 import { useToast } from './use-toast';
 
