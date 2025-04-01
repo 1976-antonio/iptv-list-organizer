@@ -1,5 +1,5 @@
 
-import { IPTVPlaylist } from "@/types/iptv";
+import { IPTVPlaylist, StreamingServer } from "@/types/iptv";
 
 const MAX_STORAGE_SIZE = 5 * 1024 * 1024; // 5MB limit for most browsers
 
@@ -90,3 +90,84 @@ export const safelyStorePlaylist = (playlists: IPTVPlaylist[]): { success: boole
     };
   }
 };
+
+// Function to safely store streaming servers with size limits
+export const safelyStoreServers = (servers: StreamingServer[]): { success: boolean, message?: string } => {
+  try {
+    // Check if it would exceed quota
+    if (wouldExceedQuota("streaming-servers", servers)) {
+      // If too large, limit the number of servers
+      let serverLimit = servers.length;
+      while (serverLimit > 0 && wouldExceedQuota("streaming-servers", servers.slice(0, serverLimit))) {
+        serverLimit = Math.floor(serverLimit * 0.7);
+      }
+      
+      if (serverLimit === 0) {
+        return {
+          success: false,
+          message: 'Impossibile salvare i server. Spazio di archiviazione insufficiente.'
+        };
+      }
+      
+      // Store the limited servers
+      localStorage.setItem("streaming-servers", JSON.stringify(servers.slice(0, serverLimit)));
+      
+      return {
+        success: true,
+        message: `Solo ${serverLimit} server sono stati salvati a causa di limiti di spazio.`
+      };
+    }
+    
+    // Store all servers if within quota
+    localStorage.setItem("streaming-servers", JSON.stringify(servers));
+    return { success: true };
+  } catch (e) {
+    console.error('Failed to save streaming servers', e);
+    return {
+      success: false,
+      message: 'Impossibile salvare i server. Errore durante il salvataggio.'
+    };
+  }
+};
+
+// Add a route to App.tsx
+<lov-write file_path="src/App.tsx">
+import { Toaster } from "@/components/ui/toaster";
+import { Toaster as Sonner } from "@/components/ui/sonner";
+import { TooltipProvider } from "@/components/ui/tooltip";
+import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
+import { BrowserRouter, Routes, Route } from "react-router-dom";
+import { IPTVProvider } from "./context/IPTVContext";
+import Index from "./pages/Index";
+import Categories from "./pages/Categories";
+import Countries from "./pages/Countries"; 
+import Browse from "./pages/Browse";
+import TestStream from "./pages/TestStream";
+import Settings from "./pages/Settings";
+import NotFound from "./pages/NotFound";
+
+const queryClient = new QueryClient();
+
+const App = () => (
+  <QueryClientProvider client={queryClient}>
+    <TooltipProvider>
+      <IPTVProvider>
+        <Toaster />
+        <Sonner />
+        <BrowserRouter>
+          <Routes>
+            <Route path="/" element={<Index />} />
+            <Route path="/categories" element={<Categories />} />
+            <Route path="/countries" element={<Countries />} />
+            <Route path="/browse" element={<Browse />} />
+            <Route path="/test" element={<TestStream />} />
+            <Route path="/settings" element={<Settings />} />
+            <Route path="*" element={<NotFound />} />
+          </Routes>
+        </BrowserRouter>
+      </IPTVProvider>
+    </TooltipProvider>
+  </QueryClientProvider>
+);
+
+export default App;

@@ -31,3 +31,12 @@ export interface IPTVPlaylist {
   groups: IPTVGroup[];
   countries: IPTVCountry[];
 }
+
+// Add the StreamingServer interface
+export interface StreamingServer {
+  id: string;
+  name: string;
+  url: string;
+  location: string;
+  isActive: boolean;
+}
