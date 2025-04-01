@@ -1,3 +1,4 @@
+
 import * as React from "react"
 import { Slot } from "@radix-ui/react-slot"
 import { VariantProps, cva } from "class-variance-authority"
@@ -65,8 +66,7 @@ const SidebarProvider = React.forwardRef<
     },
     ref
   ) => {
-    const mobileInfo: UseMobileResult = useIsMobile()
-    const isMobile = mobileInfo.isMobile
+    const { isMobile, toggleSidebar } = useIsMobile()
     const [openMobile, setOpenMobile] = React.useState(false)
 
     const [_open, _setOpen] = React.useState(defaultOpen)
@@ -85,7 +85,7 @@ const SidebarProvider = React.forwardRef<
       [setOpenProp, open]
     )
 
-    const toggleSidebar = React.useCallback(() => {
+    const toggleSidebarHandler = React.useCallback(() => {
       return isMobile
         ? setOpenMobile((open) => !open)
         : setOpen((open) => !open)
@@ -98,13 +98,13 @@ const SidebarProvider = React.forwardRef<
           (event.metaKey || event.ctrlKey)
         ) {
           event.preventDefault()
-          toggleSidebar()
+          toggleSidebarHandler()
         }
       }
 
       window.addEventListener("keydown", handleKeyDown)
       return () => window.removeEventListener("keydown", handleKeyDown)
-    }, [toggleSidebar])
+    }, [toggleSidebarHandler])
 
     const state = open ? "expanded" : "collapsed"
 
@@ -116,9 +116,9 @@ const SidebarProvider = React.forwardRef<
         isMobile,
         openMobile,
         setOpenMobile,
-        toggleSidebar: mobileInfo.toggleSidebar,
+        toggleSidebar,
       }),
-      [state, open, setOpen, isMobile, openMobile, setOpenMobile, mobileInfo.toggleSidebar]
+      [state, open, setOpen, isMobile, openMobile, setOpenMobile, toggleSidebar]
     )
 
     return (
