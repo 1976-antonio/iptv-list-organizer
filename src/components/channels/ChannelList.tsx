@@ -18,11 +18,11 @@ interface ChannelListProps {
 }
 
 const ChannelList: React.FC<ChannelListProps> = ({
-  channels,
-  groups,
-  countries,
-  genres,
-  broadcasters,
+  channels = [],
+  groups = [],
+  countries = [],
+  genres = [],
+  broadcasters = [],
   selectedChannel,
   onChannelSelect,
   onTestAllChannels
@@ -33,7 +33,10 @@ const ChannelList: React.FC<ChannelListProps> = ({
   const [activeCategoryType, setActiveCategoryType] = useState<"group" | "country" | "genre" | "broadcaster" | null>(null);
 
   useEffect(() => {
-    if (!channels) return;
+    if (!channels || channels.length === 0) {
+      setFilteredChannels([]);
+      return;
+    }
     
     let filtered = channels;
     
@@ -147,7 +150,7 @@ const ChannelList: React.FC<ChannelListProps> = ({
                     className="font-medium p-2 cursor-pointer hover:bg-muted rounded-md"
                     onClick={() => handleCategorySelect(group.name, "group")}
                   >
-                    {group.name} ({group.channels.length})
+                    {group.name} ({group.channels && group.channels.length || 0})
                   </div>
                 </div>
               ))
@@ -171,7 +174,7 @@ const ChannelList: React.FC<ChannelListProps> = ({
                     onClick={() => handleCategorySelect(country.name, "country")}
                   >
                     <Flag className="h-4 w-4 mr-2" />
-                    {country.name} ({country.channels.length})
+                    {country.name} ({country.channels && country.channels.length || 0})
                   </div>
                 </div>
               ))
@@ -195,7 +198,7 @@ const ChannelList: React.FC<ChannelListProps> = ({
                     onClick={() => handleCategorySelect(genre.name, "genre")}
                   >
                     <Film className="h-4 w-4 mr-2" />
-                    {genre.name} ({genre.channels.length})
+                    {genre.name} ({genre.channels && genre.channels.length || 0})
                   </div>
                 </div>
               ))
@@ -219,7 +222,7 @@ const ChannelList: React.FC<ChannelListProps> = ({
                     onClick={() => handleCategorySelect(broadcaster.name, "broadcaster")}
                   >
                     <Tv className="h-4 w-4 mr-2" />
-                    {broadcaster.name} ({broadcaster.channels.length})
+                    {broadcaster.name} ({broadcaster.channels && broadcaster.channels.length || 0})
                   </div>
                 </div>
               ))

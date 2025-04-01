@@ -28,7 +28,10 @@ const Countries = () => {
   });
   
   useEffect(() => {
-    if (!currentPlaylist) return;
+    if (!currentPlaylist || !currentPlaylist.countries) {
+      setFilteredCountries([]);
+      return;
+    }
     
     let filtered = [...currentPlaylist.countries];
     
@@ -134,7 +137,7 @@ const Countries = () => {
                             )}
                           </div>
                         </TableCell>
-                        <TableCell className="text-right">{country.channels.length}</TableCell>
+                        <TableCell className="text-right">{country.channels ? country.channels.length : 0}</TableCell>
                       </TableRow>
                     ))
                   ) : (
@@ -158,7 +161,7 @@ const Countries = () => {
                 </h3>
                 <ScrollArea className="h-[40vh]">
                   {selectedCountry.channels && selectedCountry.channels.length > 0 ? (
-                    selectedCountry.channels.map((channelId) => {
+                    selectedCountry.channels.map((channelId: string) => {
                       const channel = currentPlaylist.channels.find(c => c.id === channelId);
                       if (!channel) return null;
                       
