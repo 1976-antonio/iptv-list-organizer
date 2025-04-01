@@ -1,9 +1,16 @@
+
 import * as React from "react"
 
 const MOBILE_BREAKPOINT = 768
 
-export function useIsMobile() {
+export interface UseMobileResult {
+  isMobile: boolean
+  toggleSidebar: () => void
+}
+
+export function useIsMobile(): UseMobileResult {
   const [isMobile, setIsMobile] = React.useState<boolean | undefined>(undefined)
+  const [sidebarOpen, setSidebarOpen] = React.useState(false)
 
   React.useEffect(() => {
     const mql = window.matchMedia(`(max-width: ${MOBILE_BREAKPOINT - 1}px)`)
@@ -15,5 +22,12 @@ export function useIsMobile() {
     return () => mql.removeEventListener("change", onChange)
   }, [])
 
-  return !!isMobile
+  const toggleSidebar = React.useCallback(() => {
+    setSidebarOpen(prev => !prev)
+  }, [])
+
+  return {
+    isMobile: !!isMobile,
+    toggleSidebar
+  }
 }
