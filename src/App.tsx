@@ -10,8 +10,6 @@ import Categories from "./pages/Categories";
 import TestStream from "./pages/TestStream";
 import Settings from "./pages/Settings";
 import NotFound from "./pages/NotFound";
-import StreamingServers from "./pages/StreamingServers";
-import Browse from "./pages/Browse";
 
 const queryClient = new QueryClient();
 
@@ -27,8 +25,6 @@ const App = () => (
             <Route path="/categories" element={<Categories />} />
             <Route path="/test" element={<TestStream />} />
             <Route path="/settings" element={<Settings />} />
-            <Route path="/streaming" element={<StreamingServers />} />
-            <Route path="/browse" element={<Browse />} />
             <Route path="*" element={<NotFound />} />
           </Routes>
         </BrowserRouter>
@@ -38,4 +34,3 @@ const App = () => (
 );
 
 export default App;
-

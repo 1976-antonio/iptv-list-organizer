@@ -1,6 +1,6 @@
 
 import React from "react";
-import { ListVideo, FolderOpen, Settings, Search, Globe, Server, LibraryBig } from "lucide-react";
+import { ListVideo, FolderOpen, Settings, Search } from "lucide-react";
 import {
   Sidebar,
   SidebarContent,
@@ -13,7 +13,7 @@ import {
   SidebarMenuItem,
   SidebarTrigger,
 } from "@/components/ui/sidebar";
-import { Link, useLocation } from "react-router-dom";
+import { Link } from "react-router-dom";
 
 const menuItems = [
   {
@@ -27,19 +27,9 @@ const menuItems = [
     icon: FolderOpen,
   },
   {
-    title: "Sfoglia",
-    url: "/browse",
-    icon: LibraryBig,
-  },
-  {
     title: "Test Stream",
     url: "/test",
     icon: Search,
-  },
-  {
-    title: "Server Streaming",
-    url: "/streaming",
-    icon: Server,
   },
   {
     title: "Impostazioni",
@@ -49,14 +39,12 @@ const menuItems = [
 ];
 
 const AppSidebar = () => {
-  const location = useLocation();
-  
   return (
     <Sidebar>
       <SidebarHeader className="px-4 py-6">
         <SidebarTrigger className="flex lg:hidden mb-4" />
         <Link to="/" className="flex items-center space-x-2">
-          <Globe className="h-6 w-6 text-iptv-primary" />
+          <ListVideo className="h-6 w-6 text-iptv-primary" />
           <span className="text-xl font-bold">IPTV Organizer</span>
         </Link>
       </SidebarHeader>
@@ -65,22 +53,16 @@ const AppSidebar = () => {
           <SidebarGroupLabel>Menu</SidebarGroupLabel>
           <SidebarGroupContent>
             <SidebarMenu>
-              {menuItems.map((item) => {
-                const isActive = location.pathname === item.url;
-                return (
-                  <SidebarMenuItem key={item.title}>
-                    <SidebarMenuButton asChild>
-                      <Link 
-                        to={item.url} 
-                        className={`flex items-center space-x-2 ${isActive ? 'text-primary font-medium' : ''}`}
-                      >
-                        <item.icon className={`h-5 w-5 ${isActive ? 'text-primary' : ''}`} />
-                        <span>{item.title}</span>
-                      </Link>
-                    </SidebarMenuButton>
-                  </SidebarMenuItem>
-                );
-              })}
+              {menuItems.map((item) => (
+                <SidebarMenuItem key={item.title}>
+                  <SidebarMenuButton asChild>
+                    <Link to={item.url} className="flex items-center space-x-2">
+                      <item.icon className="h-5 w-5" />
+                      <span>{item.title}</span>
+                    </Link>
+                  </SidebarMenuButton>
+                </SidebarMenuItem>
+              ))}
             </SidebarMenu>
           </SidebarGroupContent>
         </SidebarGroup>
@@ -90,4 +72,3 @@ const AppSidebar = () => {
 };
 
 export default AppSidebar;
-
