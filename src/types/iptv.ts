@@ -32,7 +32,6 @@ export interface IPTVPlaylist {
   countries: IPTVCountry[];
 }
 
-// Add the StreamingServer interface
 export interface StreamingServer {
   id: string;
   name: string;

@@ -17,7 +17,7 @@ import {
 const Browse = () => {
   const { currentPlaylist, setSelectedChannel } = useIPTV();
   const [searchTerm, setSearchTerm] = useState("");
-  const [filteredChannels, setFilteredChannels] = useState<typeof currentPlaylist?.channels>([]);
+  const [filteredChannels, setFilteredChannels] = useState<typeof currentPlaylist?.channels | []>([]);
   
   useEffect(() => {
     if (!currentPlaylist) return;
@@ -84,7 +84,7 @@ const Browse = () => {
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {filteredChannels && filteredChannels.map((channel) => (
+                  {filteredChannels && filteredChannels.length > 0 ? filteredChannels.map((channel) => (
                     <TableRow 
                       key={channel.id}
                       className="cursor-pointer hover:bg-muted"
@@ -99,7 +99,11 @@ const Browse = () => {
                         {channel.status === 'testing' && <span className="text-yellow-500">In test</span>}
                       </TableCell>
                     </TableRow>
-                  ))}
+                  )) : (
+                    <TableRow>
+                      <TableCell colSpan={3} className="text-center py-4">Nessun canale trovato</TableCell>
+                    </TableRow>
+                  )}
                 </TableBody>
               </Table>
             </div>

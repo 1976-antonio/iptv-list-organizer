@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from "react";
 import AppLayout from "@/components/layout/AppLayout";
 import { useIPTV } from "@/context/IPTVContext";
@@ -8,7 +9,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Input } from "@/components/ui/input";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Separator } from "@/components/ui/separator";
-import { Search, RefreshCw, CheckCircle, XCircle, Circle, Flag } from "lucide-react";
+import { Search, RefreshCw, CheckCircle, XCircle, Circle, Flag, Server } from "lucide-react";
 
 const Index = () => {
   const { 
@@ -18,17 +19,19 @@ const Index = () => {
     setSelectedChannel, 
     testAllChannels,
     selectedChannel,
-    testChannel
+    testChannel,
+    getStreamUrl,
+    selectedServer
   } = useIPTV();
   
   const [searchTerm, setSearchTerm] = useState("");
-  const [filteredChannels, setFilteredChannels] = useState<typeof currentPlaylist.channels>([]);
+  const [filteredChannels, setFilteredChannels] = useState<typeof currentPlaylist?.channels | []>([]);
   const [activeCategory, setActiveCategory] = useState<string | null>(null);
   
   useEffect(() => {
     if (!currentPlaylist) return;
     
-    let filtered = currentPlaylist.channels;
+    let filtered = [...currentPlaylist.channels];
     
     if (searchTerm) {
       filtered = filtered.filter(channel => 
@@ -80,15 +83,23 @@ const Index = () => {
               <CardHeader>
                 <CardTitle className="text-xl flex justify-between items-center">
                   <span>Playlist</span>
-                  <Button 
-                    variant="outline" 
-                    size="sm" 
-                    onClick={testAllChannels} 
-                    disabled={!currentPlaylist}
-                  >
-                    <RefreshCw className="h-4 w-4 mr-2" />
-                    Test All
-                  </Button>
+                  <div className="flex space-x-2">
+                    {selectedServer && (
+                      <div className="flex items-center text-xs bg-muted px-2 py-1 rounded-md">
+                        <Server className="h-3 w-3 mr-1" />
+                        {selectedServer.name}
+                      </div>
+                    )}
+                    <Button 
+                      variant="outline" 
+                      size="sm" 
+                      onClick={testAllChannels} 
+                      disabled={!currentPlaylist}
+                    >
+                      <RefreshCw className="h-4 w-4 mr-2" />
+                      Test All
+                    </Button>
+                  </div>
                 </CardTitle>
               </CardHeader>
               <CardContent>
@@ -113,7 +124,7 @@ const Index = () => {
                   
                   <TabsContent value="all">
                     <ScrollArea className="h-[60vh] pr-4">
-                      {filteredChannels.map((channel) => (
+                      {filteredChannels && filteredChannels.length > 0 ? filteredChannels.map((channel) => (
                         <div 
                           key={channel.id} 
                           className={`flex items-center p-2 mb-1 rounded-md cursor-pointer ${
@@ -133,13 +144,17 @@ const Index = () => {
                             {channel.group}
                           </div>
                         </div>
-                      ))}
+                      )) : (
+                        <div className="text-center py-4 text-muted-foreground">
+                          Nessun canale trovato
+                        </div>
+                      )}
                     </ScrollArea>
                   </TabsContent>
                   
                   <TabsContent value="categories">
                     <ScrollArea className="h-[60vh] pr-4">
-                      {currentPlaylist?.groups.map((group) => (
+                      {currentPlaylist?.groups && currentPlaylist.groups.length > 0 ? currentPlaylist.groups.map((group) => (
                         <div key={group.id} className="mb-4">
                           <div 
                             className="font-medium p-2 cursor-pointer hover:bg-muted rounded-md"
@@ -148,13 +163,17 @@ const Index = () => {
                             {group.name} ({group.channels.length})
                           </div>
                         </div>
-                      ))}
+                      )) : (
+                        <div className="text-center py-4 text-muted-foreground">
+                          Nessuna categoria trovata
+                        </div>
+                      )}
                     </ScrollArea>
                   </TabsContent>
                   
                   <TabsContent value="countries">
                     <ScrollArea className="h-[60vh] pr-4">
-                      {currentPlaylist?.countries.map((country) => (
+                      {currentPlaylist?.countries && currentPlaylist.countries.length > 0 ? currentPlaylist.countries.map((country) => (
                         <div key={country.id} className="mb-4">
                           <div 
                             className="font-medium p-2 cursor-pointer hover:bg-muted rounded-md flex items-center"
@@ -164,7 +183,11 @@ const Index = () => {
                             {country.name} ({country.channels.length})
                           </div>
                         </div>
-                      ))}
+                      )) : (
+                        <div className="text-center py-4 text-muted-foreground">
+                          Nessun paese trovato
+                        </div>
+                      )}
                     </ScrollArea>
                   </TabsContent>
                 </Tabs>
@@ -217,7 +240,14 @@ const Index = () => {
                     <div>
                       <div className="text-sm font-medium mb-1">Stream URL:</div>
                       <div className="p-2 bg-muted rounded-md text-xs break-all">
-                        {selectedChannel.url}
+                        {selectedServer ? (
+                          <>
+                            <div className="mb-1">Originale: {selectedChannel.url}</div>
+                            <div className="font-medium">Rediretta: {getStreamUrl(selectedChannel.url)}</div>
+                          </>
+                        ) : (
+                          selectedChannel.url
+                        )}
                       </div>
                     </div>
                     
@@ -241,7 +271,7 @@ const Index = () => {
                       <div className="text-sm font-medium mb-2">Anteprima:</div>
                       <div className="video-container bg-black rounded-md">
                         <video 
-                          src={selectedChannel.url}
+                          src={selectedServer ? getStreamUrl(selectedChannel.url) : selectedChannel.url}
                           controls
                           autoPlay
                           className="w-full h-full"
