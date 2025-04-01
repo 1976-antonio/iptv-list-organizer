@@ -6,10 +6,11 @@ const MOBILE_BREAKPOINT = 768
 export interface UseMobileResult {
   isMobile: boolean
   toggleSidebar: () => void
+  sidebarOpen: boolean
 }
 
 export function useIsMobile(): UseMobileResult {
-  const [isMobile, setIsMobile] = React.useState<boolean | undefined>(undefined)
+  const [isMobile, setIsMobile] = React.useState<boolean>(false)
   const [sidebarOpen, setSidebarOpen] = React.useState(false)
 
   React.useEffect(() => {
@@ -27,7 +28,8 @@ export function useIsMobile(): UseMobileResult {
   }, [])
 
   return {
-    isMobile: !!isMobile,
+    isMobile,
+    sidebarOpen,
     toggleSidebar
   }
 }
