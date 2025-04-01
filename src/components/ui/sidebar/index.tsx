@@ -1,8 +1,8 @@
 
 // Exporting all sidebar components from a single entry point
 import { useSidebar, SidebarProvider } from "./sidebar-context"
-import { Sidebar, SidebarRail } from "./sidebar"
-import { SidebarTrigger } from "./sidebar-trigger"
+import { Sidebar } from "./sidebar"
+import { SidebarTrigger, SidebarRail } from "./sidebar-trigger"
 import { 
   SidebarContent, 
   SidebarFooter, 
