@@ -1,0 +1,23 @@
+
+{
+  "appId": "com.iptv.organizer",
+  "productName": "IPTV List Organizer",
+  "directories": {
+    "output": "releases"
+  },
+  "files": [
+    "dist/**/*",
+    "electron/**/*"
+  ],
+  "win": {
+    "target": [
+      "nsis"
+    ],
+    "icon": "public/favicon.ico"
+  },
+  "nsis": {
+    "oneClick": false,
+    "allowToChangeInstallationDirectory": true,
+    "createDesktopShortcut": true
+  }
+}
